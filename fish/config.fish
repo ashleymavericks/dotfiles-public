@@ -1,3 +1,6 @@
+# Anurag Singh (ashleymavericks)
+# Fish Shell Configurations without oh-my-fish
+
 ### ADDING TO THE PATH
 # First line removes the path; second line sets it.  Without the first line,
 # your path gets massive and fish becomes very slow.
@@ -7,8 +10,83 @@ set -U fish_user_paths $HOME/.local/bin $HOME/Applications $fish_user_paths
 ### EXPORT ###
 set fish_greeting                                 # Supresses fish's intro message
 set TERM "xterm-256color"                         # Sets the terminal type
-set EDITOR "emacsclient -t -a ''"                 # $EDITOR use Emacs in terminal
-set VISUAL "emacsclient -c -a emacs"              # $VISUAL use Emacs in GUI mode
+set EDITOR "nvim"                 # $EDITOR use Emacs in terminal
+set VISUAL "code"              # $VISUAL use Emacs in GUI mode
+
+## name: sashimi ##
+function fish_prompt
+  set -l last_status $status
+  set -l cyan (set_color -o cyan)
+  set -l yellow (set_color -o yellow)
+  set -g red (set_color -o red)
+  set -g blue (set_color -o blue)
+  set -l green (set_color -o green)
+  set -g normal (set_color normal)
+
+  set -l ahead (_git_ahead)
+  set -g whitespace ' '
+
+  if test $last_status = 0
+    set initial_indicator "$green◆"
+    set status_indicator "$normal❯$cyan❯$green❯"
+  else
+    set initial_indicator "$red✖ $last_status"
+    set status_indicator "$red❯$red❯$red❯"
+  end
+  set -l cwd $cyan(basename (prompt_pwd))
+
+  if [ (_git_branch_name) ]
+
+    if test (_git_branch_name) = 'master'
+      set -l git_branch (_git_branch_name)
+      set git_info "$normal git:($red$git_branch$normal)"
+    else
+      set -l git_branch (_git_branch_name)
+      set git_info "$normal git:($blue$git_branch$normal)"
+    end
+
+    if [ (_is_git_dirty) ]
+      set -l dirty "$yellow ✗"
+      set git_info "$git_info$dirty"
+    end
+  end
+
+  # Notify if a command took more than 5 minutes
+  if [ "$CMD_DURATION" -gt 300000 ]
+    echo The last command took (math "$CMD_DURATION/1000") seconds.
+  end
+
+  echo -n -s $initial_indicator $whitespace $cwd $git_info $whitespace $ahead $status_indicator $whitespace
+end
+
+function _git_ahead
+  set -l commits (command git rev-list --left-right '@{upstream}...HEAD' ^/dev/null)
+  if [ $status != 0 ]
+    return
+  end
+  set -l behind (count (for arg in $commits; echo $arg; end | grep '^<'))
+  set -l ahead  (count (for arg in $commits; echo $arg; end | grep -v '^<'))
+  switch "$ahead $behind"
+    case ''     # no upstream
+    case '0 0'  # equal to upstream
+      return
+    case '* 0'  # ahead of upstream
+      echo "$blue↑$normal_c$ahead$whitespace"
+    case '0 *'  # behind upstream
+      echo "$red↓$normal_c$behind$whitespace"
+    case '*'    # diverged from upstream
+      echo "$blue↑$normal$ahead $red↓$normal_c$behind$whitespace"
+  end
+end
+
+function _git_branch_name
+  echo (command git symbolic-ref HEAD ^/dev/null | sed -e 's|^refs/heads/||')
+end
+
+function _is_git_dirty
+  echo (command git status -s --ignore-submodules=dirty ^/dev/null)
+end
+### End of Sashimi Prompt ###
 
 ### SET MANPAGER
 ### Uncomment only one of these!
@@ -122,7 +200,7 @@ function __history_previous_command_arguments
   end
 end
 # The bindings for !! and !$
-if [ $fish_key_bindings = "fish_vi_key_bindings" ];
+if [ $fish_key_bindings = fish_vi_key_bindings ];
   bind -Minsert ! __history_previous_command
   bind -Minsert '$' __history_previous_command_arguments
 else
@@ -198,12 +276,11 @@ end
 
 
 ### ALIASES ###
-# \x1b[2J   <- clears tty
-# \x1b[1;1H <- goes to (1, 1) (start)
-alias clear='echo -en "\x1b[2J\x1b[1;1H" ; echo; echo; seq 1 (tput cols) | sort -R | spark | lolcat; echo; echo'
+# spark aliases
+alias clear='/bin/clear; echo; echo; seq 1 (tput cols) | sort -R | spark | lolcat; echo; echo'
 
 # root privileges
-alias doas="doas --"
+# alias doas="doas --"
 
 # navigation
 alias ..='cd ..'
@@ -220,6 +297,13 @@ alias doomsync="~/.emacs.d/bin/doom sync"
 alias doomdoctor="~/.emacs.d/bin/doom doctor"
 alias doomupgrade="~/.emacs.d/bin/doom upgrade"
 alias doompurge="~/.emacs.d/bin/doom purge"
+
+# bat
+# alias cat='bat'
+
+# broot
+alias br='broot -dhp'
+alias bs='broot --sizes'
 
 # Changing "ls" to "exa"
 alias ls='exa -al --color=always --group-directories-first' # my preferred listing
@@ -261,11 +345,13 @@ alias vifm='./.config/vifm/scripts/vifmrun'
 alias ncmpcpp='ncmpcpp ncmpcpp_directory=$HOME/.config/ncmpcpp/'
 alias mocp='mocp -M "$XDG_CONFIG_HOME"/moc -O MOCDir="$XDG_CONFIG_HOME"/moc'
 
-# ps
-alias psa="ps auxf"
-alias psgrep="ps aux | grep -v grep | grep -i -e VSZ -e"
+## get top process eating memory
 alias psmem='ps auxf | sort -nr -k 4'
+alias psmem10='ps auxf | sort -nr -k 4 | head -10'
+
+## get top process eating cpu ##
 alias pscpu='ps auxf | sort -nr -k 3'
+alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
 
 # Merge Xresources
 alias merge='xrdb -merge ~/.Xresources'
@@ -321,16 +407,15 @@ alias rr='curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/mas
 # Unlock LBRY tips
 alias tips="lbrynet txo spend --type=support --is_not_my_input --blocking"
 
-### DTOS ###
-# Copy/paste all content of /etc/dtos over to home folder. A backup of config is created. (Be careful running this!)
-alias dtoscopy='[ -d ~/.config ] || mkdir ~/.config && cp -Rf ~/.config ~/.config-backup-(date +%Y.%m.%d-%H.%M.%S) && cp -rf /etc/dtos/* ~'
-# Backup contents of /etc/dtos to a backup folder in $HOME.
-alias dtosbackup='cp -Rf /etc/dtos ~/dtos-backup-(date +%Y.%m.%d-%H.%M.%S)'
+# force all kakoune windows into one session
+alias kak="/usr/bin/kak -c mysession"
+alias kaks="/usr/bin/kak -s mysession"
+alias kakd="/usr/bin/kak -d -s mysession &"
 
 ### RANDOM COLOR SCRIPT ###
-# Get this script GitLab: gitlab.com/dwt1/shell-color-scripts
+# Get this script from my GitLab: gitlab.com/dwt1/shell-color-scripts
 # Or install it from the Arch User Repository: shell-color-scripts
 # colorscript random
 
 ### SETTING THE STARSHIP PROMPT ###
-starship init fish | source
+# starship init fish | source
