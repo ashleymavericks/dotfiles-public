@@ -13,7 +13,7 @@ set TERM "xterm-256color"                         # Sets the terminal type
 set EDITOR "nvim"                 # $EDITOR use Emacs in terminal
 set VISUAL "code"              # $VISUAL use Emacs in GUI mode
 
-## Peco functions ##
+## PECO FUNCTIONS ##
 function fish_user_key_bindings
   # peco
   bind \cr peco_select_history # Bind for peco select history to Ctrl+R
