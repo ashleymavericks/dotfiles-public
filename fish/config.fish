@@ -13,11 +13,63 @@ set TERM "xterm-256color"                         # Sets the terminal type
 set EDITOR "nvim"                 # $EDITOR use Emacs in terminal
 set VISUAL "code"              # $VISUAL use Emacs in GUI mode
 
+## Peco functions ##
+function fish_user_key_bindings
+  # peco
+  bind \cr peco_select_history # Bind for peco select history to Ctrl+R
+  bind \cf peco_change_directory # Bind for peco change directory to Ctrl+F
+
+  # vim-like
+  bind \cl forward-char
+
+  # prevent iterm2 from closing when typing Ctrl-D (EOF)
+  # bind \cd delete-char
+end
+
+function _peco_change_directory
+  if [ (count $argv) ]
+    peco --layout=bottom-up --query "$argv "|perl -pe 's/([ ()])/\\\\$1/g'|read foo
+  else
+    peco --layout=bottom-up |perl -pe 's/([ ()])/\\\\$1/g'|read foo
+  end
+  if [ $foo ]
+    builtin cd $foo
+    commandline -r ''
+    commandline -f repaint
+  else
+    commandline ''
+  end
+end
+
+function peco_change_directory
+  begin
+    echo $HOME/.config
+    ghq list -p
+    ls -ad */|perl -pe "s#^#$PWD/#"|grep -v \.git
+    ls -ad $HOME/dev/*/* |grep -v \.git
+  end | sed -e 's/\/$//' | awk '!a[$0]++' | _peco_change_directory $argv
+end
+
+function peco_select_history
+  if test (count $argv) = 0
+    set peco_flags --layout=bottom-up
+  else
+    set peco_flags --layout=bottom-up --query "$argv"
+  end
+
+  history|peco $peco_flags|read foo
+
+  if [ $foo ]
+    commandline $foo
+  else
+    commandline ''
+  end
+end
+
+
 ## name: sashimi ##
 function fish_prompt
   set -l last_status $status
-  set -l cyan (set_color -o cyan)
-  set -l yellow (set_color -o yellow)
   set -g red (set_color -o red)
   set -g blue (set_color -o blue)
   set -l green (set_color -o green)
