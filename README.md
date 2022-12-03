@@ -1,4 +1,5 @@
 ![cover](./images/cover.png)
+
 # Anurag Singh's dotfiles
 Dotfiles are the customization files that are used to personalize your Linux or other Unix-based system.  You can tell that a file is a dotfile because the name of the file will begin with a period–a dot!
 
@@ -6,6 +7,8 @@ Dotfiles are the customization files that are used to personalize your Linux or 
 
 - fish config
 - zsh config
+- homer config
+- portainer scripts
 
 ## Fish Shell setup (macOS & Linux)
 
@@ -16,3 +19,6 @@ Dotfiles are the customization files that are used to personalize your Linux or 
 - [Exa](https://the.exa.website/) - `ls` replacement
 - [ghq](https://github.com/x-motemen/ghq) - Local Git repository organizer
 - [peco](https://github.com/peco/peco) - Interactive filtering
+
+## Minimal Self-Hosted setup
+![self-hosted](images/minimal_selfhosted_setup.jpg)
